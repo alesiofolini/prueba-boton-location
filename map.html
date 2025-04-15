@@ -2,18 +2,18 @@
 <html>
 <head>
   <title>View Shared Locations</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link 
+    rel="stylesheet" 
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-    #map {
-      height: 100%;
-      width: 100%;
-    }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    #map { height: 100%; width: 100%; }
   </style>
 </head>
 <body>
@@ -23,50 +23,36 @@
 <script>
   // Replace with your Firebase config
   const firebaseConfig = {
-  apiKey: "AIzaSyAbt6ClcJTqskXyP56rezvLVb_XYOF_hBY",
-  authDomain: "prueba-boton-location.firebaseapp.com",
-  databaseURL: "https://prueba-boton-location-default-rtdb.firebaseio.com",
-  projectId: "prueba-boton-location",
-  storageBucket: "prueba-boton-location.firebasestorage.app",
-  messagingSenderId: "1022415984262",
-  appId: "1:1022415984262:web:22d3ba986de42006426307",
-  measurementId: "G-294RMN9BZ8"
-};
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID"
+  };
 
   firebase.initializeApp(firebaseConfig);
   const dbRef = firebase.database().ref("locations");
 
-  // Load Google Maps script dynamically
-  function loadMapScript() {
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap`;
-    script.async = true;
-    document.head.appendChild(script);
-  }
+  // Initialize Leaflet map
+  const map = L.map('map').setView([0, 0], 2);
 
-  // Called by Google Maps when the script loads
-  function initMap() {
-    const map = new google.maps.Map(document.getElementById("map"), {
-      zoom: 2,
-      center: { lat: 0, lng: 0 }
+  // Add OpenStreetMap tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Load markers from Firebase
+  dbRef.once("value").then(snapshot => {
+    snapshot.forEach(child => {
+      const data = child.val();
+      if (data.latitude && data.longitude) {
+        const marker = L.marker([data.latitude, data.longitude]).addTo(map);
+        marker.bindPopup(`📍 Shared on:<br>${new Date(data.timestamp).toLocaleString()}`);
+      }
     });
-
-    dbRef.once("value").then(snapshot => {
-      snapshot.forEach(child => {
-        const data = child.val();
-        if (data.latitude && data.longitude) {
-          new google.maps.Marker({
-            position: { lat: data.latitude, lng: data.longitude },
-            map: map,
-            title: new Date(data.timestamp).toLocaleString()
-          });
-        }
-      });
-    });
-  }
-
-  // Load the map script
-  loadMapScript();
+  });
 </script>
 
 </body>
